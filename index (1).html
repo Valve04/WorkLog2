@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Work Log Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#f7f6f3;--surface:#ffffff;--surface2:#f0efe9;--border:#e5e3da;--border2:#d4d2c8;--text:#1a1916;--text2:#6b6960;--text3:#a8a69e;--accent:#2f6fef;--accent-bg:#eef3fd;--success:#1a7f4b;--success-bg:#edf7f2;--danger:#c0392b;--danger-bg:#fdf0ee;--warn:#b45309;--warn-bg:#fef3e2;--radius:10px;--radius-sm:6px;--font:'IBM Plex Sans Thai',sans-serif;--mono:'IBM Plex Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.sidebar-logo{font-size:15px;font-weight:600;color:var(--text);padding:0 8px;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.sidebar-logo span{font-family:var(--mono);font-size:11px;background:#edf7f2;color:var(--success);padding:2px 6px;border-radius:4px;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--surface2);color:var(--text);font-weight:500}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+.sidebar-section{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 10px 4px}
+.profile-box{margin-top:auto;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border)}
+.profile-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.profile-name{font-size:12px;font-weight:500;color:var(--text)}
+.profile-meta{font-size:11px;color:var(--text3)}
+.main{padding:2rem 2.5rem;overflow-y:auto}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
+.page-title{font-size:22px;font-weight:600;color:var(--text)}
+.page-subtitle{font-size:13px;color:var(--text3);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-family:var(--font);border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.88;background:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-success:hover{opacity:.88}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1rem}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:500;color:var(--text)}
+.card-body{padding:16px 18px}
+.form-grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.field label{font-size:11px;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{width:100%;font-size:13px;font-family:var(--font);padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:var(--accent);background:var(--surface)}
+.hrs-display{font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:8px 10px;border-radius:var(--radius-sm);text-align:center;font-family:var(--mono);border:1px solid #c5d8fb}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:600;color:var(--text3);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;background:var(--surface)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:3px 6px;border-radius:4px;transition:all .15s}
+.del-btn:hover{color:var(--danger);background:var(--danger-bg)}
+.banner{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:var(--radius);margin-bottom:1rem;border:1px solid}
+.banner.info{background:var(--accent-bg);border-color:#c5d8fb;color:#1a4a9e}
+.banner.success{background:var(--success-bg);border-color:#a8dfc4;color:var(--success)}
+.banner.warn{background:var(--warn-bg);border-color:#fbd99a;color:var(--warn)}
+.banner.error{background:var(--danger-bg);border-color:#f5c4bc;color:var(--danger)}
+.sheets-status{display:flex;align-items:center;gap:6px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.connected{background:var(--success)}
+.dot.disconnected{background:var(--text3)}
+.dot.syncing{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.proj-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);gap:12px}
+.proj-row:last-child{border-bottom:none}
+.bar-track{height:3px;background:var(--surface2);border-radius:2px;margin-top:5px;grid-column:1/-1}
+.bar-fill{height:3px;border-radius:2px}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{display:flex;align-items:center;gap:4px;padding:3px 9px;border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--text2);background:var(--surface)}
+.chip-x{cursor:pointer;color:var(--text3);margin-left:2px;font-size:10px}
+.chip-x:hover{color:var(--danger)}
+.add-row{display:flex;gap:6px}
+.add-row input{font-size:12px;padding:5px 9px;border-radius:20px;flex:1}
+.add-row button{font-size:12px;padding:5px 12px;border-radius:20px}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
+.setting-block{margin-bottom:1.5rem}
+.setting-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.mono-input{font-family:var(--mono);font-size:12px}
+.chart-wrap{position:relative;width:100%;height:220px}
+.month-select{font-size:14px;font-weight:500;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font)}
+.sync-log-wrap{max-height:150px;overflow-y:auto;margin-top:8px}
+.sync-log-entry{font-size:11px;color:var(--text3);font-family:var(--mono);padding:4px 0;border-bottom:1px solid var(--border)}
+.sync-log-entry:last-child{border-bottom:none}
+.sync-log-entry.ok{color:var(--success)}
+.sync-log-entry.err{color:var(--danger)}
+.step-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.step-item{display:flex;gap:10px;align-items:flex-start}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--success-bg);color:var(--success);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:13px;color:var(--text2);line-height:1.5}
+.step-text a{color:var(--accent);text-decoration:none}
+.step-text code{font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--text)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}.main{padding:1rem}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-logo">Work Log <span>v5</span></div>
+  <div class="sidebar-section">เมนู</div>
+  <button class="nav-item active" onclick="switchPage('log',this)"><span class="nav-icon">📝</span> Log รายวัน</button>
+  <button class="nav-item" onclick="switchPage('summary',this)"><span class="nav-icon">📊</span> สรุปรายโปรเจค</button>
+  <button class="nav-item" onclick="switchPage('wtype',this)"><span class="nav-icon">🗂</span> สรุป Work Type</button>
+  <div class="sidebar-section">ระบบ</div>
+  <button class="nav-item" onclick="switchPage('settings',this)"><span class="nav-icon">⚙️</span> ตั้งค่า</button>
+  <div class="profile-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div class="profile-avatar" id="sidebarAvatar">P</div>
+      <div>
+        <div class="profile-name" id="sidebarName">—</div>
+        <div class="profile-meta" id="sidebarMeta">—</div>
+      </div>
+    </div>
+    <div class="sheets-status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">ยังไม่ได้เชื่อม Sheets</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- LOG PAGE -->
+<div id="pagelog">
+  <div class="page-header">
+    <div><div class="page-title">Log รายวัน</div><div class="page-subtitle">1 วัน = 8 ชั่วโมง</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select class="month-select" id="monthSel"></select>
+      <button class="btn" onclick="exportCSV()">↓ CSV</button>
+    </div>
+  </div>
+  <div class="stats-row" id="statsRow"></div>
+  <div id="feedbackArea"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">เพิ่ม log ใหม่</div>
+      <div id="profilePill" style="font-size:12px;color:var(--text3)"></div>
+    </div>
+    <div class="card-body">
+      <div class="form-grid g3" style="margin-bottom:10px">
+        <div class="field"><label>วันที่</label><input type="date" id="logDate"/></div>
+        <div class="field"><label>Work Type</label><select id="logWT" onchange="filterDesc()"></select></div>
+        <div class="field"><label>Work Description</label><select id="logProj"></select></div>
+      </div>
+      <div class="form-grid g3">
+        <div class="field"><label>ชั่วโมง</label><input type="number" id="logHours" value="8" min="0.5" max="40" step="0.5" oninput="updateBadge()"/></div>
+        <div class="field"><label>จำนวนวัน (อัตโนมัติ)</label><div class="hrs-display" id="hrsBadge">1.0 วัน</div></div>
+        <div class="field"><label>Remarks</label><input type="text" id="logRemarks" placeholder="หมายเหตุ"/></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="clearForm()">ล้าง</button>
+        <button class="btn btn-primary" id="addBtn" onclick="addLog()">+ เพิ่ม log</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title" id="logTableTitle">รายการ</div></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>วันที่</th><th>Work Type</th><th>Work Description</th><th>วัน</th><th>ชม.</th><th>Remarks</th><th>Sheets</th><th></th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY PAGE -->
+<div id="pagesummary" style="display:none">
+  <div class="page-header">
+    <div><div class="page-title">สรุปรายโปรเจค</div><div class="page-subtitle" id="summarySubtitle"></div></div>
+    <select class="month-select" id="monthSel2"></select>
+  </div>
+  <div class="card" style="padding:16px 18px"><div class="chart-wrap"><canvas id="projChart" role="img" aria-label="ชั่วโมงรวมรายโปรเจค">ชั่วโมงรวมรายโปรเจค</canvas></div></div>
+  <div class="card" id="projSummaryList" style="overflow:hidden"></div>
+</div>
+
+<!-- WTYPE PAGE -->
+<div id="pagewtype" style="display:none">
+  <div class="page-header">
+    <div><div class="page-title">สรุป Work Type</div><div class="page-subtitle" id="wtypeSubtitle"></div></div>
+    <select class="month-select" id="monthSel3"></select>
+  </div>
+  <div class="card" style="padding:16px 18px"><div class="chart-wrap"><canvas id="wtChart" role="img" aria-label="สัดส่วน Work Type">สัดส่วน Work Type</canvas></div></div>
+  <div class="card" id="wtSummaryList" style="overflow:hidden"></div>
+</div>
+
+<!-- SHEETS PAGE -->
+<!-- SETTINGS PAGE -->
+<div id="pagesettings" style="display:none">
+  <div class="page-header"><div><div class="page-title">ตั้งค่า</div><div class="page-subtitle">จัดการ Profile และ dropdown</div></div></div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Profile ของคุณ</div></div>
+    <div class="card-body">
+      <div class="form-grid g2" style="margin-bottom:10px">
+        <div class="field"><label>Resource Name</label><input type="text" id="setResource" placeholder="ชื่อ-นามสกุล" oninput="saveProfile()"/></div>
+        <div class="field"><label>Team</label><select id="setTeam" onchange="saveProfile()"></select></div>
+      </div>
+      <div class="form-grid g2">
+        <div class="field"><label>Role</label><select id="setRole" onchange="saveProfile()"></select></div>
+        <div class="field"><label>Staff Type</label><select id="setStaffType" onchange="saveProfile()"></select></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">จัดการ Dropdown</div></div>
+    <div class="card-body"><div id="settingBlocks"></div><div class="setting-block"><div class="setting-label">Work Description แยกตาม Work Type</div><div id="projByWT"></div></div></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const COLORS=['#2f6fef','#1a7f4b','#c0392b','#b45309','#7c3aed','#0891b2','#65a30d','#db2777'];
+const MN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbwOTIZGFNrM0M9HCw4kbZ_j73VmvMjZSRtnpLji-u5jphpSfVdnMW4TKJnXunrlSU1_/exec';
+
+// ── Supabase Config ──
+const SUPA_URL='https://yochrjbpzudlssvegsth.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvY2hyamJwenVkbHNzdmVnc3RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODY4MDUsImV4cCI6MjA5MjI2MjgwNX0.Tw3rKSYXzfi0ibnLcgQRxnSEg39ilMJcDkmuUzOsJ0Q';
+const SUPA_HEADERS={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
+
+async function supaLoadLogs(){
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/logs?order=created_at.desc`,{headers:SUPA_HEADERS});
+    if(!res.ok)throw new Error('load failed');
+    const rows=await res.json();
+    return rows.map(r=>({
+      id:r.id, date:r.date, workType:r.work_type, proj:r.proj,
+      role:r.role, team:r.team, resource:r.resource, staffType:r.staff_type,
+      days:parseFloat(r.days)||0, hours:parseFloat(r.hours)||0,
+      remarks:r.remarks||'', synced:true, supa_id:r.id
+    }));
+  }catch(e){console.error('supaLoadLogs',e);return null;}
+}
+
+async function supaInsertLog(log){
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/logs`,{
+      method:'POST',
+      headers:{...SUPA_HEADERS,'Prefer':'return=representation'},
+      body:JSON.stringify({
+        date:log.date, work_type:log.workType, proj:log.proj,
+        role:log.role, team:log.team, resource:log.resource,
+        staff_type:log.staffType, days:log.days, hours:log.hours,
+        remarks:log.remarks||''
+      })
+    });
+    if(!res.ok)throw new Error('insert failed');
+    const rows=await res.json();
+    return rows[0]?.id||null;
+  }catch(e){console.error('supaInsertLog',e);return null;}
+}
+
+async function supaDeleteLog(supa_id){
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/logs?id=eq.${supa_id}`,{
+      method:'DELETE', headers:SUPA_HEADERS
+    });
+    return res.ok;
+  }catch(e){console.error('supaDeleteLog',e);return false;}
+}
+
+let cfg={
+  workTypes:['Project','Operational','Management','Learning and Development','Leave/Vacation'],
+  roles:['Member','Consult','DEV','Lead'],
+  teams:['DA','DE','DS','BI'],
+  staffTypes:['IC','Manager','Senior'],
+  projects:{
+    'Project':['Data SLA','Daily Cashflow (ETL)','Add Master','SHE & 5S AUDIT DASHBOARD','Procurement Data support','Production Server','Central Log','P/L Dashboard (Test UAT)','Input Data (Power Apps)','BGE','P/L Dashboard (Sand mail)','Automate check data Onelake'],
+    'Operational':['Support and Improvement'],
+    'Management':['Team Management'],
+    'Learning and Development':['Training/Seminar'],
+    'Leave/Vacation':['Leave/Vacation']
+  },
+  profile:{resource:'Phattanapong Phumiretsoontorn',team:'DA',role:'Member',staffType:'IC'},
+  sheets:{url:SHEETS_URL,connected:false},
+  logs:[]
+};
+let charts={proj:null,wt:null};
+let curMonth='';
+let syncLogs=[];
+
+function init(){
+  loadStorage();
+  if(!cfg.sheets.url)cfg.sheets.url=SHEETS_URL;
+  const now=new Date();
+  ['monthSel','monthSel2','monthSel3'].forEach(id=>{
+    const s=document.getElementById(id);
+    for(let i=0;i<12;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      const val=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      const o=document.createElement('option');o.value=val;o.textContent=MN[d.getMonth()]+' '+d.getFullYear();s.appendChild(o);
+    }
+    s.onchange=()=>{curMonth=s.value;syncMonths();renderCurrentPage()};
+  });
+  curMonth=document.getElementById('monthSel').value;
+  document.getElementById('logDate').value=now.toISOString().split('T')[0];
+  const su=document.getElementById('sheetsUrl');
+  if(su)su.value=cfg.sheets.url||'';
+  populateDropdowns();renderAll();
+  loadLogsFromSupa();
+}
+
+function syncMonths(){['monthSel','monthSel2','monthSel3'].forEach(id=>{const s=document.getElementById(id);if(s)s.value=curMonth;});}
+
+function loadStorage(){
+  // โหลดเฉพาะ config (profile, settings) จาก localStorage — logs โหลดจาก Supabase
+  try{const s=localStorage.getItem('wl_cfg_v2');if(s){const p=JSON.parse(s);
+    cfg.workTypes=p.workTypes||cfg.workTypes;
+    cfg.roles=p.roles||cfg.roles;
+    cfg.teams=p.teams||cfg.teams;
+    cfg.staffTypes=p.staffTypes||cfg.staffTypes;
+    cfg.projects=p.projects||cfg.projects;
+    cfg.profile=p.profile||cfg.profile;
+    cfg.sheets=p.sheets||cfg.sheets;
+  }}catch(e){}
+}
+
+function saveStorage(){
+  // บันทึกเฉพาะ config — logs ไม่เก็บใน localStorage แล้ว
+  try{const save={workTypes:cfg.workTypes,roles:cfg.roles,teams:cfg.teams,
+    staffTypes:cfg.staffTypes,projects:cfg.projects,profile:cfg.profile,sheets:cfg.sheets};
+    localStorage.setItem('wl_cfg_v2',JSON.stringify(save));}catch(e){}
+}
+
+async function loadLogsFromSupa(){
+  showFeedback('info','⏳ กำลังโหลดข้อมูลจาก Supabase...');
+  const logs=await supaLoadLogs();
+  if(logs!==null){
+    cfg.logs=logs;
+    showFeedback('success','✓ โหลดข้อมูลสำเร็จ');
+    setTimeout(()=>showFeedback('',''),2500);
+  } else {
+    showFeedback('error','⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ');
+  }
+  renderAll();
+}
+
+function populateDropdowns(){
+  fillSel('logWT',cfg.workTypes);filterDesc();
+  fillSel('setTeam',cfg.teams);fillSel('setRole',cfg.roles);fillSel('setStaffType',cfg.staffTypes);
+  document.getElementById('setResource').value=cfg.profile.resource||'';
+  document.getElementById('setTeam').value=cfg.profile.team||'';
+  document.getElementById('setRole').value=cfg.profile.role||'';
+  document.getElementById('setStaffType').value=cfg.profile.staffType||'';
+}
+
+function fillSel(id,arr){
+  const s=document.getElementById(id);if(!s)return;
+  const cur=s.value;s.innerHTML='';
+  arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});
+  if(arr.includes(cur))s.value=cur;
+}
+
+function filterDesc(){
+  const wt=document.getElementById('logWT').value;
+  fillSel('logProj',cfg.projects[wt]||cfg.workTypes.flatMap(w=>cfg.projects[w]||[]));
+}
+
+function saveProfile(){
+  cfg.profile.resource=document.getElementById('setResource').value;
+  cfg.profile.team=document.getElementById('setTeam').value;
+  cfg.profile.role=document.getElementById('setRole').value;
+  cfg.profile.staffType=document.getElementById('setStaffType').value;
+  saveStorage();renderSidebar();
+}
+
+function saveSheetsUrl(){
+  cfg.sheets.url=document.getElementById('sheetsUrl').value.trim();
+  cfg.sheets.connected=false;saveStorage();renderSidebar();
+}
+
+function renderSidebar(){
+  const p=cfg.profile;
+  const ini=(p.resource||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent=ini;
+  document.getElementById('sidebarName').textContent=p.resource||'(ไม่ระบุ)';
+  document.getElementById('sidebarMeta').textContent=[p.team,p.role,p.staffType].filter(Boolean).join(' · ')||'—';
+  document.getElementById('statusDot').className='dot '+(cfg.sheets.connected?'connected':'disconnected');
+  document.getElementById('statusText').textContent=cfg.sheets.connected?'เชื่อม Sheets แล้ว ✓':'ยังไม่ได้เชื่อม Sheets';
+  const pp=document.getElementById('profilePill');
+  if(pp)pp.textContent=p.resource?`${p.resource} · ${p.team} · ${p.role}`:'';
+}
+
+async function testSheets(){
+  const url=cfg.sheets.url;
+  const el=document.getElementById('sheetsTestResult');
+  if(!url){el.innerHTML='<span style="color:var(--warn);font-size:12px">กรุณากรอก URL ก่อนครับ</span>';return;}
+  el.innerHTML='<span style="color:var(--text3);font-size:12px">⏳ กำลังทดสอบ...</span>';
+  try{
+    const res=await fetch(url,{method:'GET',mode:'no-cors'});
+    cfg.sheets.connected=true;saveStorage();
+    el.innerHTML='<span style="color:var(--success);font-size:12px">✓ เชื่อมต่อสำเร็จ!</span>';
+    renderSidebar();addSyncLog('✓ เชื่อมต่อ Google Sheets สำเร็จ','ok');
+  }catch(e){
+    el.innerHTML='<span style="color:var(--danger);font-size:12px">✗ ไม่สามารถเชื่อมต่อได้</span>';
+  }
+}
+
+async function pushToSheets(log){
+  const url=cfg.sheets.url;
+  if(!url)return false;
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({date:log.date,workType:log.workType,proj:log.proj,role:log.role,team:log.team,resource:log.resource,staffType:log.staffType,days:log.days,hours:log.hours,remarks:log.remarks||''})
+    });
+    addSyncLog(`✓ Synced "${log.proj}" (${log.date})`,'ok');
+    return true;
+  }catch(e){
+    addSyncLog(`✗ Error syncing "${log.proj}": ${e.message}`,'err');
+    return false;
+  }
+}
+
+function addSyncLog(msg,type){
+  const now=new Date();
+  const ts=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  syncLogs.unshift({msg:`[${ts}] ${msg}`,type:type||''});
+  if(syncLogs.length>50)syncLogs.pop();
+  const wrap=document.getElementById('syncLogWrap');
+  if(wrap)wrap.innerHTML=syncLogs.map(l=>`<div class="sync-log-entry ${l.type}">${l.msg}</div>`).join('');
+}
+
+async function syncAllPending(){
+  const pending=cfg.logs.filter(l=>!l.synced);
+  if(!pending.length){addSyncLog('ไม่มี log ที่ค้างอยู่','ok');return;}
+  for(const log of pending){
+    const ok=await pushToSheets(log);
+    if(ok){log.synced=true;}
+  }
+  saveStorage();renderAll();
+}
+
+function updateBadge(){
+  const h=parseFloat(document.getElementById('logHours').value)||0;
+  const days=+(h/8).toFixed(4);
+  document.getElementById('hrsBadge').textContent=(Math.round(days*100)/100)+' วัน';
+}
+
+async function addLog(){
+  const date=document.getElementById('logDate').value;
+  const wt=document.getElementById('logWT').value;
+  const proj=document.getElementById('logProj').value;
+  const hours=parseFloat(document.getElementById('logHours').value);
+  const days=+(hours/8).toFixed(4);
+  const remarks=document.getElementById('logRemarks').value;
+  if(!date||!proj||!hours||hours<=0)return;
+  const p=cfg.profile;
+  const log={id:Date.now(),date,workType:wt,proj,days:Math.round(days*100)/100,hours:+hours.toFixed(2),remarks,
+    resource:p.resource,team:p.team,role:p.role,staffType:p.staffType,synced:false};
+
+  const btn=document.getElementById('addBtn');btn.disabled=true;
+  showFeedback('info','⏳ กำลังบันทึกเข้า Supabase...');
+
+  const supa_id=await supaInsertLog(log);
+  if(supa_id){
+    log.synced=true;
+    log.supa_id=supa_id;
+    log.id=supa_id;
+    cfg.logs.unshift(log);
+    document.getElementById('logRemarks').value='';
+    renderAll();
+    showFeedback('success','✓ บันทึกเข้า Supabase สำเร็จ!');
+  } else {
+    showFeedback('error','⚠️ บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+  }
+  btn.disabled=false;
+  setTimeout(()=>showFeedback('',''),3000);
+}
+
+function showFeedback(type,msg){
+  const el=document.getElementById('feedbackArea');
+  if(!type){el.innerHTML='';return;}
+  el.innerHTML=`<div class="banner ${type}" style="margin-bottom:.8rem"><div style="font-size:13px">${msg}</div></div>`;
+}
+
+function clearForm(){document.getElementById('logHours').value='8';document.getElementById('logRemarks').value='';updateBadge();}
+async function deleteLog(id){
+  const log=cfg.logs.find(l=>l.id===id||l.supa_id===id);
+  if(!log)return;
+  const supa_id=log.supa_id||log.id;
+  const ok=await supaDeleteLog(supa_id);
+  if(ok){cfg.logs=cfg.logs.filter(l=>l.id!==id&&l.supa_id!==id);renderAll();}
+  else{alert('ลบไม่สำเร็จ กรุณาลองใหม่');}
+}
+
+function getFiltered(){return cfg.logs.filter(l=>l.date.startsWith(curMonth)).sort((a,b)=>b.date.localeCompare(a.date));}
+
+function renderAll(){renderSidebar();renderStats();renderLogTable();}
+function renderCurrentPage(){
+  renderStats();renderLogTable();
+  if(document.getElementById('pagesummary').style.display!=='none')renderSummary();
+  if(document.getElementById('pagewtype').style.display!=='none')renderWtype();
+}
+
+function renderStats(){
+  const f=getFiltered();
+  const hrs=f.reduce((s,l)=>s+l.hours,0);
+  const days=f.reduce((s,l)=>s+l.days,0);
+  const synced=f.filter(l=>l.synced).length;
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-label">ชั่วโมงรวม</div><div class="stat-val">${hrs.toFixed(1)}</div><div class="stat-sub">ชั่วโมง</div></div>
+    <div class="stat-card"><div class="stat-label">วันรวม</div><div class="stat-val">${days.toFixed(1)}</div><div class="stat-sub">วัน</div></div>
+    <div class="stat-card"><div class="stat-label">โปรเจค</div><div class="stat-val">${new Set(f.map(l=>l.proj)).size}</div><div class="stat-sub">โปรเจค</div></div>
+    <div class="stat-card"><div class="stat-label">Supabase Sync</div><div class="stat-val">${synced}/${f.length}</div><div class="stat-sub">รายการ</div></div>
+  `;
+}
+
+function renderLogTable(){
+  const f=getFiltered();
+  const tb=document.getElementById('logBody');
+  const [y,m]=curMonth.split('-');
+  const title=document.getElementById('logTableTitle');
+  if(title)title.textContent=`รายการ — ${MN[parseInt(m)-1]} ${y}`;
+  if(!f.length){tb.innerHTML=`<tr><td colspan="8" class="empty">ยังไม่มี log ในเดือนนี้</td></tr>`;return;}
+  tb.innerHTML=f.map(l=>{
+    const d=new Date(l.date+'T00:00:00');
+    const ds=d.getDate()+' '+MN[d.getMonth()];
+    const ci=COLORS[Math.abs(hashStr(l.proj))%COLORS.length];
+    const wtci=COLORS[Math.abs(hashStr(l.workType||''))%COLORS.length];
+    const sheetsCell=l.synced?`<span style="color:var(--success);font-size:13px">✓</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`;
+    return `<tr>
+      <td style="color:var(--text2);white-space:nowrap;font-family:var(--mono);font-size:12px">${ds}</td>
+      <td><span class="tag" style="background:${wtci}18;color:${wtci}">${l.workType||'-'}</span></td>
+      <td><span class="tag" style="background:${ci}18;color:${ci}">${l.proj}</span></td>
+      <td style="text-align:right;font-family:var(--mono)">${l.days}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:600">${l.hours.toFixed(1)}</td>
+      <td style="color:var(--text3);font-size:11px">${l.remarks||'—'}</td>
+      <td style="text-align:center">${sheetsCell}</td>
+      <td><button class="del-btn" onclick="deleteLog(${l.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSummary(){
+  const f=getFiltered();
+  const [y,m]=curMonth.split('-');
+  document.getElementById('summarySubtitle').textContent=MN[parseInt(m)-1]+' '+y;
+  const map={};
+  f.forEach(l=>{if(!map[l.proj])map[l.proj]={days:0,hours:0,wt:l.workType};map[l.proj].days+=l.days;map[l.proj].hours+=l.hours;});
+  const entries=Object.entries(map).sort((a,b)=>b[1].hours-a[1].hours);
+  const maxH=entries.length?entries[0][1].hours:1;
+  const list=document.getElementById('projSummaryList');
+  if(!entries.length){list.innerHTML=`<div class="empty">ไม่มีข้อมูล</div>`;destroyChart('proj');return;}
+  list.innerHTML=entries.map(([proj,v])=>{
+    const col=COLORS[Math.abs(hashStr(proj))%COLORS.length];
+    const wtci=COLORS[Math.abs(hashStr(v.wt||''))%COLORS.length];
+    const pct=(v.hours/maxH*100).toFixed(0);
+    return `<div><div class="proj-row">
+      <div><div style="font-size:13px;font-weight:500">${proj}</div><div style="margin-top:3px"><span class="tag" style="background:${wtci}18;color:${wtci};font-size:10px">${v.wt||''}</span></div></div>
+      <div style="font-size:12px;color:var(--text3)">${v.days.toFixed(1)} วัน</div>
+      <div style="font-size:14px;font-weight:600;font-family:var(--mono)">${v.hours.toFixed(1)} ชม.</div>
+    </div><div style="padding:0 18px 10px"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div></div></div>`;
+  }).join('');
+  buildChart('proj',entries.map(e=>e[0]),entries.map(e=>e[1].hours),'bar');
+}
+
+function renderWtype(){
+  const f=getFiltered();
+  const [y,m]=curMonth.split('-');
+  document.getElementById('wtypeSubtitle').textContent=MN[parseInt(m)-1]+' '+y;
+  const map={};
+  f.forEach(l=>{const k=l.workType||'Other';if(!map[k])map[k]={days:0,hours:0};map[k].days+=l.days;map[k].hours+=l.hours;});
+  const entries=Object.entries(map).sort((a,b)=>b[1].hours-a[1].hours);
+  const list=document.getElementById('wtSummaryList');
+  if(!entries.length){list.innerHTML=`<div class="empty">ไม่มีข้อมูล</div>`;destroyChart('wt');return;}
+  const maxH=entries[0][1].hours;
+  list.innerHTML=entries.map(([wt,v])=>{
+    const col=COLORS[Math.abs(hashStr(wt))%COLORS.length];
+    const pct=(v.hours/maxH*100).toFixed(0);
+    return `<div><div class="proj-row">
+      <div style="font-size:13px;font-weight:500">${wt}</div>
+      <div style="font-size:12px;color:var(--text3)">${v.days.toFixed(1)} วัน</div>
+      <div style="font-size:14px;font-weight:600;font-family:var(--mono)">${v.hours.toFixed(1)} ชม.</div>
+    </div><div style="padding:0 18px 10px"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div></div></div>`;
+  }).join('');
+  buildChart('wt',entries.map(e=>e[0]),entries.map(e=>e[1].hours),'doughnut');
+}
+
+function destroyChart(t){if(charts[t]){charts[t].destroy();charts[t]=null;}}
+function buildChart(type,labels,vals,ct){
+  destroyChart(type);
+  const ctx=document.getElementById(type==='proj'?'projChart':'wtChart').getContext('2d');
+  if(!labels.length)return;
+  const bg=labels.map(l=>COLORS[Math.abs(hashStr(l))%COLORS.length]);
+  charts[type]=new Chart(ctx,{type:ct,
+    data:{labels,datasets:[{label:'ชั่วโมง',data:vals,backgroundColor:bg.map(c=>c+'bb'),borderColor:bg,borderWidth:1.5,borderRadius:ct==='bar'?6:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:ct==='doughnut',position:'right',labels:{font:{size:11},boxWidth:10,padding:10}},
+        tooltip:{callbacks:{label:c=>ct==='doughnut'?`${c.label}: ${c.parsed.toFixed(1)} ชม.`:`${c.parsed.y.toFixed(1)} ชม.`}}},
+      ...(ct==='bar'?{scales:{x:{ticks:{font:{size:10},autoSkip:false,maxRotation:35},grid:{display:false}},y:{ticks:{callback:v=>v+' ชม.',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}}}}:{})}
+  });
+}
+
+function renderSettingBlocks(){
+  const blocks=[{key:'workTypes',label:'Work Type',inputId:'inWT'},{key:'roles',label:'Role',inputId:'inRole'},{key:'teams',label:'Team',inputId:'inTeam'},{key:'staffTypes',label:'Staff Type',inputId:'inStaff'}];
+  document.getElementById('settingBlocks').innerHTML=blocks.map(b=>`
+    <div class="setting-block">
+      <div class="setting-label">${b.label}</div>
+      <div class="chip-wrap" id="chips_${b.key}"></div>
+      <div class="add-row"><input id="${b.inputId}" placeholder="เพิ่ม ${b.label}" onkeydown="if(event.key==='Enter')addMeta('${b.key}','${b.inputId}','chips_${b.key}')"/><button class="btn btn-sm" onclick="addMeta('${b.key}','${b.inputId}','chips_${b.key}')">+ เพิ่ม</button></div>
+    </div>`).join('');
+  blocks.forEach(b=>renderChips(b.key,'chips_'+b.key));
+}
+
+function renderChips(key,wrapId){
+  const wrap=document.getElementById(wrapId);if(!wrap)return;
+  wrap.innerHTML=(cfg[key]||[]).map((v,i)=>`<div class="chip"><span>${v}</span><span class="chip-x" onclick="removeMeta('${key}',${i})">✕</span></div>`).join('');
+}
+
+function renderProjByWT(){
+  const wrap=document.getElementById('projByWT');if(!wrap)return;
+  wrap.innerHTML=cfg.workTypes.map(wt=>{
+    const projs=cfg.projects[wt]||[];
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px">${wt}</div>
+      <div class="chip-wrap">${projs.map((p,i)=>`<div class="chip">${p}<span class="chip-x" onclick="removeProjWT('${wt}',${i})">✕</span></div>`).join('')}</div>
+      <div class="add-row"><input id="ip_${wt.replace(/\W/g,'_')}" placeholder="เพิ่ม description"/><button class="btn btn-sm" onclick="addProjWT('${wt}')">+ เพิ่ม</button></div>
+    </div>`;
+  }).join('');
+}
+
+function addMeta(key,inputId,wrapId){
+  const inp=document.getElementById(inputId);const v=inp.value.trim();if(!v||cfg[key].includes(v))return;
+  cfg[key].push(v);inp.value='';saveStorage();populateDropdowns();renderChips(key,wrapId);
+}
+function removeMeta(key,i){cfg[key].splice(i,1);saveStorage();populateDropdowns();renderSettingBlocks();}
+function addProjWT(wt){
+  const inp=document.getElementById('ip_'+wt.replace(/\W/g,'_'));if(!inp)return;
+  const v=inp.value.trim();if(!v)return;
+  if(!cfg.projects[wt])cfg.projects[wt]=[];
+  if(!cfg.projects[wt].includes(v))cfg.projects[wt].push(v);
+  inp.value='';saveStorage();renderProjByWT();filterDesc();
+}
+function removeProjWT(wt,i){if(cfg.projects[wt])cfg.projects[wt].splice(i,1);saveStorage();renderProjByWT();filterDesc();}
+
+function switchPage(page,el){
+  ['log','summary','wtype','sheets','settings'].forEach(p=>{const e=document.getElementById('page'+p);if(e)e.style.display='none';});
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const target=document.getElementById('page'+page);if(target)target.style.display='';
+  if(page==='summary')renderSummary();
+  if(page==='wtype')renderWtype();
+  if(page==='settings'){renderSettingBlocks();renderProjByWT();}
+  if(page==='sheets'){const su=document.getElementById('sheetsUrl');if(su)su.value=cfg.sheets.url||'';}
+}
+
+function exportCSV(){
+  const f=getFiltered();if(!f.length)return alert('ไม่มีข้อมูลเดือนนี้');
+  const headers=['Work Type','Work Description','Role','Team','Resource Name','Staff Type','Date','Days','Hours','Remarks','Sheets Synced'];
+  const rows=[headers,...f.map(l=>[l.workType,l.proj,l.role,l.team,l.resource,l.staffType,l.date,l.days,l.hours.toFixed(1),l.remarks||'',l.synced?'Yes':'No'])];
+  const csv=rows.map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='worklog_'+curMonth+'.csv';a.click();
+}
+
+function hashStr(s){let h=0;for(let i=0;i<(s||'').length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h;}
+
+init();
+</script>
+</body>
+</html>
